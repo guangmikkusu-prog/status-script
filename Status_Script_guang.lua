@@ -220,66 +220,69 @@ UIS.JumpRequest:Connect(function()
 	if states.tpJump and char:FindFirstChild("HumanoidRootPart") and tonumber(tpjIn.Text) then
 		char.HumanoidRootPart.Velocity = Vector3.new(char.HumanoidRootPart.Velocity.X, tonumber(tpjIn.Text), char.HumanoidRootPart.Velocity.Z)
 	end
-end)-- ==========================================================
--- 🔑 ここから「自動キーシステム」 (ruruSCPdelta 開発)
+end)
+-- ==========================================================
+-- 🔑 自動キーシステム (修正版)
 -- ==========================================================
 
--- 🌌 デザイン設定 (シンメトリー & ネオン)
 local THEME_BG = Color3.fromRGB(10, 10, 20)
-local THEME_ACCENT = Color3.fromRGB(0, 255, 200) -- ネオンミント
+local THEME_ACCENT = Color3.fromRGB(0, 255, 200)
 local THEME_TEXT = Color3.fromRGB(200, 255, 255)
 
--- 🔑 キー取得設定 (深井さんのGist)
+-- 🔑 キー取得設定
 local GIST_URL = "https://gist.githubusercontent.com/guangmikkusu-prog/b2f286e93801333b9e6a2aa942899e82/raw/STATUSSCRIPT_TEST"
 local targetKey = ""
 
--- 非同期で最新キーを取得
+-- サーバーからキーを読み込む
 task.spawn(function()
     local success, result = pcall(function()
         return game:HttpGet(GIST_URL)
     end)
-    if success then targetKey = result:gsub("%s+", "") end
+    if success then 
+        targetKey = result:gsub("%s+", "") 
+    end
 end)
 
--- 🔓 キー入力画面 (シンメトリー配置)
+-- 🔓 キー入力画面 (シンメトリー)
 local keyFrame = Instance.new("Frame", gui)
-keyFrame.Size = UDim2.new(0, 350, 0, 220)
-keyFrame.Position = UDim2.new(0.5, -175, 0.5, -110) -- 完全中央
+keyFrame.Size = UDim2.new(0, 350, 0, 180)
+keyFrame.Position = UDim2.new(0.5, -175, 0.5, -90)
 keyFrame.BackgroundColor3 = THEME_BG
 keyFrame.Active = true
-keyFrame.Draggable = true -- ドラッグ可能
+keyFrame.Draggable = true
 Instance.new("UIStroke", keyFrame).Color = THEME_ACCENT
 
 local title = Instance.new("TextLabel", keyFrame)
 title.Size = UDim2.new(1, 0, 0.4, 0)
-title.Text = "SYSTEM LOCKED\nDeveloper: ruruSCPdelta"
+title.Text = "SYSTEM LOGIN"
 title.TextColor3 = THEME_ACCENT; title.TextScaled = true; title.BackgroundTransparency = 1; title.Font = Enum.Font.GothamBlack
 
 local keyInput = Instance.new("TextBox", keyFrame)
-keyInput.Size = UDim2.new(0.8, 0, 0.2, 0)
-keyInput.Position = UDim2.new(0.1, 0, 0.45, 0)
-keyInput.PlaceholderText = "Input Key here..."
+keyInput.Size = UDim2.new(0.8, 0, 0.25, 0)
+keyInput.Position = UDim2.new(0.1, 0, 0.4, 0)
+keyInput.PlaceholderText = "Key..."
 keyInput.Text = ""; keyInput.BackgroundColor3 = Color3.fromRGB(30, 30, 45); keyInput.TextColor3 = Color3.new(1,1,1)
 
 local submit = Instance.new("TextButton", keyFrame)
 submit.Size = UDim2.new(0.6, 0, 0.2, 0)
 submit.Position = UDim2.new(0.2, 0, 0.75, 0)
-submit.Text = "LOGIN"; submit.BackgroundColor3 = THEME_ACCENT; submit.TextColor3 = THEME_BG; submit.Font = Enum.Font.GothamBlack
+submit.Text = "OK"; submit.BackgroundColor3 = THEME_ACCENT; submit.TextColor3 = THEME_BG; submit.Font = Enum.Font.GothamBlack
 
--- 🚀 初期状態の設定
-main.Visible = false   -- メインGUIを隠す
-openBtn.Visible = false -- Sボタンを隠す
+-- 🚀 初期状態
+main.Visible = false
+openBtn.Visible = false
 
 -- 認証ロジック
 submit.MouseButton1Click:Connect(function()
-    if keyInput.Text == targetKey then
-        keyFrame.Visible = false -- キー画面を消す
-        openBtn.Visible = true   -- Sボタンを出す
-        main.Visible = true      -- メインGUIを出す
+    local input = keyInput.Text:gsub("%s+", "")
+    -- 🔑 修正ポイント：ruruSCPdelta という入力か、取得したキーと一致すればログイン
+    if input == "ruruSCPdelta" or (targetKey ~= "" and input == targetKey) then
+        keyFrame.Visible = false
+        openBtn.Visible = true
+        main.Visible = true
     else
-        submit.Text = "INVALID KEY"
+        submit.Text = "FAILED"
         task.wait(1)
-        submit.Text = "LOGIN"
+        submit.Text = "OK"
     end
 end)
-
