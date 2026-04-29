@@ -222,18 +222,20 @@ UIS.JumpRequest:Connect(function()
 	end
 end)
 -- ==========================================================
--- 🔑 自動キーシステム (修正版)
+-- 🔑 キー認証システム（最終修正版）
 -- ==========================================================
 
+-- 🎨 デザイン設定
 local THEME_BG = Color3.fromRGB(10, 10, 20)
-local THEME_ACCENT = Color3.fromRGB(0, 255, 200)
+local THEME_ACCENT = Color3.fromRGB(0, 255, 200) -- ネオンミント
 local THEME_TEXT = Color3.fromRGB(200, 255, 255)
 
--- 🔑 キー取得設定
+-- 🔑 設定（GistのURLとキー入手先）
 local GIST_URL = "https://gist.githubusercontent.com/guangmikkusu-prog/b2f286e93801333b9e6a2aa942899e82/raw/STATUSSCRIPT_TEST"
+local KEY_SITE_URL = "https://gist.github.com/guangmikkusu-prog/b2f286e93801333b9e6a2aa942899e82"
 local targetKey = ""
 
--- サーバーからキーを読み込む
+-- 🌐 サーバーからキーを取得
 task.spawn(function()
     local success, result = pcall(function()
         return game:HttpGet(GIST_URL)
@@ -243,45 +245,59 @@ task.spawn(function()
     end
 end)
 
--- 🔓 キー入力画面 (シンメトリー)
+-- 🔓 認証画面 (シンメトリー)
 local keyFrame = Instance.new("Frame", gui)
-keyFrame.Size = UDim2.new(0, 350, 0, 180)
-keyFrame.Position = UDim2.new(0.5, -175, 0.5, -90)
+keyFrame.Size = UDim2.new(0, 350, 0, 250) -- 少し高さを広げました
+keyFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
 keyFrame.BackgroundColor3 = THEME_BG
 keyFrame.Active = true
-keyFrame.Draggable = true
+keyFrame.Draggable = true 
 Instance.new("UIStroke", keyFrame).Color = THEME_ACCENT
 
 local title = Instance.new("TextLabel", keyFrame)
-title.Size = UDim2.new(1, 0, 0.4, 0)
+title.Size = UDim2.new(1, 0, 0.3, 0)
 title.Text = "SYSTEM LOGIN"
 title.TextColor3 = THEME_ACCENT; title.TextScaled = true; title.BackgroundTransparency = 1; title.Font = Enum.Font.GothamBlack
 
 local keyInput = Instance.new("TextBox", keyFrame)
-keyInput.Size = UDim2.new(0.8, 0, 0.25, 0)
-keyInput.Position = UDim2.new(0.1, 0, 0.4, 0)
-keyInput.PlaceholderText = "Key..."
+keyInput.Size = UDim2.new(0.8, 0, 0.15, 0)
+keyInput.Position = UDim2.new(0.1, 0, 0.35, 0)
+keyInput.PlaceholderText = "Enter Key..."
 keyInput.Text = ""; keyInput.BackgroundColor3 = Color3.fromRGB(30, 30, 45); keyInput.TextColor3 = Color3.new(1,1,1)
 
+-- 🔗 キー入手サイトをコピーするボタン
+local copyLinkBtn = Instance.new("TextButton", keyFrame)
+copyLinkBtn.Size = UDim2.new(0.8, 0, 0.15, 0)
+copyLinkBtn.Position = UDim2.new(0.1, 0, 0.55, 0)
+copyLinkBtn.Text = "GET KEY (Copy Link)"; copyLinkBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60); copyLinkBtn.TextColor3 = THEME_TEXT
+Instance.new("UICorner", copyLinkBtn)
+
+copyLinkBtn.MouseButton1Click:Connect(function()
+    setclipboard(KEY_SITE_URL) -- クリップボードにコピー
+    copyLinkBtn.Text = "COPIED!"
+    task.wait(2)
+    copyLinkBtn.Text = "GET KEY (Copy Link)"
+end)
+
 local submit = Instance.new("TextButton", keyFrame)
-submit.Size = UDim2.new(0.6, 0, 0.2, 0)
-submit.Position = UDim2.new(0.2, 0, 0.75, 0)
+submit.Size = UDim2.new(0.6, 0, 0.15, 0)
+submit.Position = UDim2.new(0.2, 0, 0.8, 0)
 submit.Text = "OK"; submit.BackgroundColor3 = THEME_ACCENT; submit.TextColor3 = THEME_BG; submit.Font = Enum.Font.GothamBlack
 
--- 🚀 初期状態
+-- 🚀 初期状態の設定
 main.Visible = false
 openBtn.Visible = false
 
--- 認証ロジック
+-- 認証処理
 submit.MouseButton1Click:Connect(function()
     local input = keyInput.Text:gsub("%s+", "")
-    -- 🔑 修正ポイント：ruruSCPdelta という入力か、取得したキーと一致すればログイン
+    -- ruruSCPdelta（開発者）または正しいキーでログイン
     if input == "ruruSCPdelta" or (targetKey ~= "" and input == targetKey) then
         keyFrame.Visible = false
         openBtn.Visible = true
         main.Visible = true
     else
-        submit.Text = "FAILED"
+        submit.Text = "INVALID"
         task.wait(1)
         submit.Text = "OK"
     end
