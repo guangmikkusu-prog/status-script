@@ -222,15 +222,10 @@ UIS.JumpRequest:Connect(function()
 	end
 end)
 -- ==========================================================
--- 🔑 キー認証システム（最終修正版）
+-- 🔑 オートセーブ完全修正版 (Delta用)
 -- ==========================================================
 
--- 🎨 デザイン設定
-local THEME_BG = Color3.fromRGB(10, 10, 20)
-local THEME_ACCENT = Color3.fromRGB(0, 255, 200) -- ネオンミント
-local THEME_TEXT = Color3.fromRGB(200, 255, 255)
-
--- 🔑 設定（GistのURLとキー入手先）
+local SAVE_FILE = "StatusKey_Save.txt"
 local GIST_URL = "https://gist.githubusercontent.com/guangmikkusu-prog/b2f286e93801333b9e6a2aa942899e82/raw/STATUSSCRIPT_TEST"
 local KEY_SITE_URL = "https://gist.github.com/guangmikkusu-prog/b2f286e93801333b9e6a2aa942899e82"
 local targetKey = ""
@@ -245,57 +240,50 @@ task.spawn(function()
     end
 end)
 
--- 🔓 認証画面 (シンメトリー)
-local keyFrame = Instance.new("Frame", gui)
-keyFrame.Size = UDim2.new(0, 350, 0, 250) -- 少し高さを広げました
-keyFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
-keyFrame.BackgroundColor3 = THEME_BG
-keyFrame.Active = true
-keyFrame.Draggable = true 
-Instance.new("UIStroke", keyFrame).Color = THEME_ACCENT
+-- 🔓 システム解除
+local function unlockSystem()
+    if gui:FindFirstChild("KeySystemFrame") then
+        gui.KeySystemFrame:Destroy()
+    end
+    openBtn.Visible = true
+    main.Visible = true
+end
 
-local title = Instance.new("TextLabel", keyFrame)
-title.Size = UDim2.new(1, 0, 0.3, 0)
-title.Text = "SYSTEM LOGIN"
-title.TextColor3 = THEME_ACCENT; title.TextScaled = true; title.BackgroundTransparency = 1; title.Font = Enum.Font.GothamBlack
+-- 💾 【修正】オートログイン判定
+task.spawn(function()
+    -- キーが届くまで最大5秒待つ
+    local timer = 0
+    while targetKey == "" and timer < 5 do
+        task.wait(0.5)
+        timer = timer + 0.5
+    end
 
-local keyInput = Instance.new("TextBox", keyFrame)
-keyInput.Size = UDim2.new(0.8, 0, 0.15, 0)
-keyInput.Position = UDim2.new(0.1, 0, 0.35, 0)
-keyInput.PlaceholderText = "Enter Key..."
-keyInput.Text = ""; keyInput.BackgroundColor3 = Color3.fromRGB(30, 30, 45); keyInput.TextColor3 = Color3.new(1,1,1)
-
--- 🔗 キー入手サイトをコピーするボタン
-local copyLinkBtn = Instance.new("TextButton", keyFrame)
-copyLinkBtn.Size = UDim2.new(0.8, 0, 0.15, 0)
-copyLinkBtn.Position = UDim2.new(0.1, 0, 0.55, 0)
-copyLinkBtn.Text = "GET KEY (Copy Link)"; copyLinkBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60); copyLinkBtn.TextColor3 = THEME_TEXT
-Instance.new("UICorner", copyLinkBtn)
-
-copyLinkBtn.MouseButton1Click:Connect(function()
-    setclipboard(KEY_SITE_URL) -- クリップボードにコピー
-    copyLinkBtn.Text = "COPIED!"
-    task.wait(2)
-    copyLinkBtn.Text = "GET KEY (Copy Link)"
+    -[span_0](start_span)- ファイルが存在するか確認 (isfile)[span_0](end_span)
+    if isfile and isfile(SAVE_FILE) then
+        local success, saved = pcall(function() return readfile(SAVE_FILE) end)
+        if success then
+            local cleanSaved = saved:gsub("%s+", "")
+            -- 保存されたキーが最新キーか「ruruSCPdelta」なら解除
+            if cleanSaved == "ruruSCPdelta" or (targetKey ~= "" and cleanSaved == targetKey) then
+                unlockSystem()
+            end
+        end
+    end
 end)
 
-local submit = Instance.new("TextButton", keyFrame)
-submit.Size = UDim2.new(0.6, 0, 0.15, 0)
-submit.Position = UDim2.new(0.2, 0, 0.8, 0)
-submit.Text = "OK"; submit.BackgroundColor3 = THEME_ACCENT; submit.TextColor3 = THEME_BG; submit.Font = Enum.Font.GothamBlack
+-- [中略：GUI作成部分は前と同じなので省略されますが、一番下のボタン処理だけ書き換えます]
 
--- 🚀 初期状態の設定
-main.Visible = false
-openBtn.Visible = false
-
--- 認証処理
+-- (中略した後の) 認証ボタンのクリックイベント部分を以下に差し替え
 submit.MouseButton1Click:Connect(function()
     local input = keyInput.Text:gsub("%s+", "")
-    -- ruruSCPdelta（開発者）または正しいキーでログイン
     if input == "ruruSCPdelta" or (targetKey ~= "" and input == targetKey) then
-        keyFrame.Visible = false
-        openBtn.Visible = true
-        main.Visible = true
+        -[span_1](start_span)- 💾 【修正】ファイルに書き込む (writefile)[span_1](end_span)
+        if writefile then
+            pcall(function()
+                writefile(SAVE_FILE, input)
+            end)
+        end
+        unlockSystem()
     else
         submit.Text = "INVALID"
         task.wait(1)
